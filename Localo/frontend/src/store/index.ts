@@ -81,7 +81,7 @@ export const useAppStore = create<AppState>((set) => ({
   }),
 
   // Target Backend API Server
-  apiBaseUrl: 'http://localhost:5000/api/v1',
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1',
 }));
 
 // Initialize theme state on load
