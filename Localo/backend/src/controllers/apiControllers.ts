@@ -215,23 +215,29 @@ export const connectGoogleAccount = async (req: AuthenticatedRequest, res: Respo
     // We mock the successful Google account connection and GBP import.
     let gProfile = await GoogleProfile.findOne({ businessId, isDeleted: false });
     if (!gProfile) {
+      const business = await Business.findById(businessId);
+      const businessName = business?.name || 'Local Business';
+      const category = businessName.toLowerCase().includes('marketing') || businessName.toLowerCase().includes('seo')
+        ? 'SEO Agency'
+        : 'Local Service Business';
+
       gProfile = await GoogleProfile.create({
         businessId,
         accountId: 'acc_' + Math.random().toString(36).substr(2, 9),
         locationId: 'loc_' + Math.random().toString(36).substr(2, 9),
         placeId: 'ChIJP3Sa12K2uS4R182a51a_',
-        businessName: 'LocalRank Pro Digital Solutions',
-        primaryCategory: 'SEO Agency',
-        secondaryCategories: ['Marketing Consultant', 'Website Designer'],
-        description: 'Premium local SEO and search engine marketing agency helping local businesses rank high on Google Maps and Local Search results.',
-        services: ['Local SEO Audit', 'Keyword Tracking', 'Review Management', 'Schema Generation'],
+        businessName,
+        primaryCategory: category,
+        secondaryCategories: ['Marketing Consultant', 'Professional Services'],
+        description: `Official Google Business Profile for ${businessName}, serving local customers with high-quality services.`,
+        services: ['Customer Support', 'General Services', 'Consultation'],
         products: [
-          { name: 'SaaS Business Plan', price: '$99/month', description: 'Comprehensive SEO tool suite' },
-          { name: 'Custom SEO Audit Report', price: '$299', description: 'Hand-crafted detailed analysis' }
+          { name: 'Standard Plan', price: '$99/month', description: 'Standard service tier' },
+          { name: 'Premium Audit', price: '$299', description: 'Advanced consultation' }
         ],
-        photosCount: 14,
-        reviewsCount: 22,
-        averageRating: 4.8,
+        photosCount: 8,
+        reviewsCount: 3,
+        averageRating: 4.7,
         openingHours: {
           monday: '9am - 6pm',
           tuesday: '9am - 6pm',
@@ -251,7 +257,7 @@ export const connectGoogleAccount = async (req: AuthenticatedRequest, res: Respo
           reviewId: 'rev_1',
           reviewerName: 'John Doe',
           rating: 5,
-          comment: 'Outstanding platform! Our local rankings increased by 40% in just two weeks. Highly recommended!',
+          comment: `Outstanding service from ${businessName}! They exceeded our expectations. Highly recommended!`,
           sentiment: 'Positive',
           isReplied: true,
           publishDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
@@ -261,7 +267,7 @@ export const connectGoogleAccount = async (req: AuthenticatedRequest, res: Respo
           reviewId: 'rev_2',
           reviewerName: 'Sarah Smith',
           rating: 4,
-          comment: 'Very easy to manage all our branches. The local grid rank tracker is awesome.',
+          comment: `Great experience working with ${businessName}. Professional team and solid results.`,
           sentiment: 'Positive',
           isReplied: false,
           publishDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
@@ -270,9 +276,9 @@ export const connectGoogleAccount = async (req: AuthenticatedRequest, res: Respo
           googleProfileId: gProfile._id,
           reviewId: 'rev_3',
           reviewerName: 'Mike Jones',
-          rating: 2,
-          comment: 'The dashboard loading is somewhat slow. I hope it gets better soon.',
-          sentiment: 'Negative',
+          rating: 3,
+          comment: `Good overall, but communication could be slightly faster. Hopefully it improves.`,
+          sentiment: 'Neutral',
           isReplied: false,
           publishDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
         }
@@ -567,26 +573,37 @@ export const runWebsiteAudit = async (req: AuthenticatedRequest, res: Response) 
   try {
     const { businessId, websiteUrl } = req.body;
 
+    const business = await Business.findById(businessId);
+    const businessName = business?.name || 'Local Business';
+    let domain = 'business.com';
+    try {
+      if (websiteUrl) {
+        domain = new URL(websiteUrl).hostname;
+      }
+    } catch (e) {
+      domain = websiteUrl || 'business.com';
+    }
+
     const audit = await WebsiteAudit.create({
       businessId,
       websiteUrl,
       score: 74,
       metrics: {
-        titleTag: 'LocalRank Pro Digital Solutions | SEO & Web Agency',
-        metaDescription: 'Boost your business rankings with local SEO audits, GBP integrations, and rank tracker analysis from LocalRank Pro.',
+        titleTag: `${businessName} | ${domain}`,
+        metaDescription: `Discover professional services from ${businessName}. Learn more about our offerings and contact details online at ${domain}.`,
         h1Count: 1,
-        headings: ['Home', 'Our Services', 'Pricing Plan', 'Frequently Asked Questions', 'Contact Us'],
+        headings: ['Home', 'Our Services', 'About Us', 'Contact Us'],
         imagesCount: 22,
         imagesMissingAltCount: 8,
         schemaTypesFound: ['Organization'],
         isCanonicalSet: true,
         brokenLinksCount: 1,
-        brokenLinks: ['http://localhost:3000/broken-link-sample'],
+        brokenLinks: [`${websiteUrl}/broken-link-sample`],
         loadTimeMs: 1250
       },
       recommendations: [
         'Add Alt descriptions to all 8 images missing them.',
-        'Fix the broken link on /broken-link-sample.',
+        `Fix the broken link on ${domain}/broken-link-sample.`,
         'Add LocalBusiness schema alongside the existing Organization schema.'
       ]
     });
