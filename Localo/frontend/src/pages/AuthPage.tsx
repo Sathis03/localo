@@ -142,6 +142,7 @@ export const AuthPage: React.FC = () => {
                 label="Email Address"
                 type="email"
                 required
+                autoComplete="off"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -152,6 +153,7 @@ export const AuthPage: React.FC = () => {
                 label="Password"
                 type="password"
                 required
+                autoComplete="off"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
