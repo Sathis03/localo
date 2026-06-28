@@ -11,9 +11,11 @@ import {
 
 const router = Router();
 
+import { validateRequest, registerSchema, loginSchema } from '../middleware/validate';
+
 // Auth Routes
-router.post('/auth/register', registerUser);
-router.post('/auth/login', loginUser);
+router.post('/auth/register', validateRequest(registerSchema), registerUser);
+router.post('/auth/login', validateRequest(loginSchema), loginUser);
 
 // Dashboard
 router.get('/dashboard', authenticateJWT, getDashboardMetrics);
