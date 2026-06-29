@@ -38,14 +38,13 @@ export const AdminPage: React.FC = () => {
       </div>
     );
   }
-
   return (
     <div className="space-y-6">
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardDescription className="text-slate-500 dark:text-slate-400">Total SaaS Users</CardDescription>
+            <CardDescription className="text-slate-500 dark:text-slate-400">Total Users</CardDescription>
             <Users className="w-4 h-4 text-blue-500" />
           </CardHeader>
           <CardContent>
@@ -65,59 +64,59 @@ export const AdminPage: React.FC = () => {
 
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardDescription className="text-slate-500 dark:text-slate-400">Active Subscriptions</CardDescription>
+            <CardDescription className="text-slate-500 dark:text-slate-400">Tracked Locations</CardDescription>
             <Activity className="w-4 h-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <span className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.activeSubscriptionsCount}</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.totalBusinesses}</span>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardDescription className="text-slate-500 dark:text-slate-400">Gross SaaS Revenue</CardDescription>
-            <Landmark className="w-4 h-4 text-emerald-500" />
+            <CardDescription className="text-slate-500 dark:text-slate-400">Monitored Keywords</CardDescription>
+            <Landmark className="w-4 h-4 text-blue-400" />
           </CardHeader>
           <CardContent>
             <span className="text-2xl font-bold text-slate-900 dark:text-white">
-              ${(metrics.totalRevenue || 0).toFixed(2)}
+              {metrics.totalKeywords}
             </span>
           </CardContent>
         </Card>
       </div>
 
-      {/* Subscription Plans Limit Table */}
+      {/* Active Locations Summary Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Active Subscription Logs</CardTitle>
-          <CardDescription className="text-xs">SaaS subscription billing tracking.</CardDescription>
+          <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Tracked Locations Summary</CardTitle>
+          <CardDescription className="text-xs">Overview of active local business profiles monitored on the platform.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Agency ID</TableHead>
-                <TableHead>Billing Plan</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Location/Business</TableHead>
+                <TableHead>Service Status</TableHead>
+                <TableHead>Monitoring Interval</TableHead>
+                <TableHead>System Role</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell className="font-mono text-xs">ag_98f3c2e10a</TableCell>
-                <TableCell>Professional Plan</TableCell>
-                <TableCell className="font-semibold">$99.00/mo</TableCell>
+                <TableCell className="font-semibold text-xs text-slate-800 dark:text-slate-200">California Dental Clinic</TableCell>
                 <TableCell>
-                  <Badge variant="success">Active</Badge>
+                  <Badge variant="success">Fully Active</Badge>
                 </TableCell>
+                <TableCell className="text-xs text-slate-500">Real-time API Sync</TableCell>
+                <TableCell className="text-xs text-slate-500">SEO Agency Owner</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className="font-mono text-xs">ag_01a5b8d9c2</TableCell>
-                <TableCell>Agency Bundle Plan</TableCell>
-                <TableCell className="font-semibold">$299.00/mo</TableCell>
+                <TableCell className="font-semibold text-xs text-slate-800 dark:text-slate-200">Downtown Auto Care</TableCell>
                 <TableCell>
-                  <Badge variant="success">Active</Badge>
+                  <Badge variant="success">Fully Active</Badge>
                 </TableCell>
+                <TableCell className="text-xs text-slate-500">Real-time API Sync</TableCell>
+                <TableCell className="text-xs text-slate-500">Local Business Owner</TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -126,3 +125,4 @@ export const AdminPage: React.FC = () => {
     </div>
   );
 };
+

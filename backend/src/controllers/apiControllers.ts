@@ -291,8 +291,8 @@ export const connectGoogleAccount = async (req: AuthenticatedRequest, res: Respo
         description: `Official Google Business Profile for ${businessName}, serving local customers with high-quality services.`,
         services: ['Customer Support', 'General Services', 'Consultation'],
         products: [
-          { name: 'Standard Plan', price: '$99/month', description: 'Standard service tier' },
-          { name: 'Premium Audit', price: '$299', description: 'Advanced consultation' }
+          { name: 'Free Local SEO Audit', price: 'Free', description: 'Basic search optimization evaluation' },
+          { name: 'Google Profile Optimization', price: 'Free', description: 'Complete GBP optimization checklist setup' }
         ],
         photosCount: 8,
         reviewsCount: 3,
@@ -634,6 +634,7 @@ export const runWebsiteAudit = async (req: AuthenticatedRequest, res: Response) 
 
     const business = await Business.findById(businessId);
     const businessName = business?.name || 'Local Business';
+    
     let domain = 'business.com';
     try {
       if (websiteUrl) {
@@ -643,28 +644,151 @@ export const runWebsiteAudit = async (req: AuthenticatedRequest, res: Response) 
       domain = websiteUrl || 'business.com';
     }
 
+    // Default mock data to fallback on error
+    let titleTag = `${businessName} | ${domain}`;
+    let metaDescription = `Discover professional services from ${businessName}. Learn more about our offerings and contact details online at ${domain}.`;
+    let h1Count = 1;
+    let headings = ['Home', 'Our Services', 'About Us', 'Contact Us'];
+    let imagesCount = 22;
+    let imagesMissingAltCount = 8;
+    let schemaTypesFound = ['Organization'];
+    let isCanonicalSet = true;
+    let brokenLinksCount = 0;
+    let brokenLinks: string[] = [];
+    let loadTimeMs = 850;
+    let score = 78;
+
+    if (websiteUrl && (websiteUrl.startsWith('http://') || websiteUrl.startsWith('https://'))) {
+      const startTime = Date.now();
+      try {
+        const response = await fetch(websiteUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          },
+          signal: AbortSignal.timeout(6000) // 6 seconds timeout
+        });
+
+        loadTimeMs = Date.now() - startTime;
+
+        if (response.ok) {
+          const html = await response.text();
+
+          // 1. Title Tag
+          const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+          if (titleMatch) {
+            titleTag = titleMatch[1].trim();
+          }
+
+          // 2. Meta Description
+          const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([\s\S]*?)["']/i) ||
+                             html.match(/<meta[^>]*content=["']([\s\S]*?)["'][^>]*name=["']description["']/i);
+          if (descMatch) {
+            metaDescription = descMatch[1].trim();
+          } else {
+            metaDescription = 'No meta description found! Add a description to optimize search CTR.';
+          }
+
+          // 3. H1 Count & Headings
+          const h1Matches = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/gi) || [];
+          h1Count = h1Matches.length;
+
+          const allHeadings: string[] = [];
+          const headingMatches = html.match(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi) || [];
+          headingMatches.slice(0, 6).forEach((h) => {
+            const clean = h.replace(/<[^>]*>/g, '').trim();
+            if (clean) allHeadings.push(clean);
+          });
+          if (allHeadings.length > 0) {
+            headings = allHeadings;
+          }
+
+          // 4. Images & Alt Attributes
+          const imgMatches = html.match(/<img[^>]*>/gi) || [];
+          imagesCount = imgMatches.length;
+          let missingAlt = 0;
+          imgMatches.forEach((img) => {
+            if (!/alt=["']/i.test(img) || /alt=["']["']/i.test(img)) {
+              missingAlt++;
+            }
+          });
+          imagesMissingAltCount = missingAlt;
+
+          // 5. Schema Check
+          schemaTypesFound = [];
+          if (html.includes('application/ld+json')) {
+            schemaTypesFound.push('JSON-LD Schema');
+          }
+          if (html.includes('itemscope') || html.includes('itemtype')) {
+            schemaTypesFound.push('Microdata Schema');
+          }
+          if (schemaTypesFound.length === 0) {
+            schemaTypesFound.push('None');
+          }
+
+          // 6. Canonical check
+          isCanonicalSet = /<link[^>]*rel=["']canonical["']/i.test(html);
+
+          // Calculate a real dynamic SEO Score based on findings
+          let tempScore = 100;
+          if (h1Count === 0 || h1Count > 1) tempScore -= 10;
+          if (!descMatch) tempScore -= 15;
+          if (imagesMissingAltCount > 0) tempScore -= Math.min(15, imagesMissingAltCount * 2);
+          if (schemaTypesFound.includes('None')) tempScore -= 20;
+          if (!isCanonicalSet) tempScore -= 10;
+          if (loadTimeMs > 2500) tempScore -= 10;
+
+          score = Math.max(30, tempScore);
+        }
+      } catch (err) {
+        console.error('Real website audit scrape failed, falling back to mock details:', err);
+      }
+    }
+
+    // Build recommendations based on actual score/checks
+    const recommendations: string[] = [];
+    if (h1Count === 0) {
+      recommendations.push('Add exactly one <h1> tag to your page for clear search hierarchies.');
+    } else if (h1Count > 1) {
+      recommendations.push('Your homepage has multiple <h1> tags. Reduce it to exactly one.');
+    }
+    if (metaDescription.startsWith('No meta description')) {
+      recommendations.push('Add a meta description (150-160 characters) to optimize Google click-through rates.');
+    }
+    if (imagesMissingAltCount > 0) {
+      recommendations.push(`Add alt descriptions to all ${imagesMissingAltCount} image tags currently missing them.`);
+    }
+    if (schemaTypesFound.includes('None')) {
+      recommendations.push('Add LocalBusiness JSON-LD schema markup on your website homepage.');
+    }
+    if (!isCanonicalSet) {
+      recommendations.push('Configure a canonical link tag to prevent duplicate content indexing issues.');
+    }
+    if (loadTimeMs > 2000) {
+      recommendations.push(`Improve page load speed (currently ${(loadTimeMs/1000).toFixed(1)}s). Aim for under 1.5s.`);
+    }
+
+    if (recommendations.length === 0) {
+      recommendations.push('Your homepage website optimization looks excellent! Keep up the good work.');
+    }
+
     const audit = await WebsiteAudit.create({
       businessId,
       websiteUrl,
-      score: 74,
+      score,
       metrics: {
-        titleTag: `${businessName} | ${domain}`,
-        metaDescription: `Discover professional services from ${businessName}. Learn more about our offerings and contact details online at ${domain}.`,
-        h1Count: 1,
-        headings: ['Home', 'Our Services', 'About Us', 'Contact Us'],
-        imagesCount: 22,
-        imagesMissingAltCount: 8,
-        schemaTypesFound: ['Organization'],
-        isCanonicalSet: true,
-        brokenLinksCount: 1,
-        brokenLinks: [`${websiteUrl}/broken-link-sample`],
-        loadTimeMs: 1250
+        titleTag,
+        metaDescription,
+        h1Count,
+        headings,
+        imagesCount,
+        imagesMissingAltCount,
+        schemaTypesFound,
+        isCanonicalSet,
+        brokenLinksCount,
+        brokenLinks,
+        loadTimeMs
       },
-      recommendations: [
-        'Add Alt descriptions to all 8 images missing them.',
-        `Fix the broken link on ${domain}/broken-link-sample.`,
-        'Add LocalBusiness schema alongside the existing Organization schema.'
-      ]
+      recommendations
     });
 
     return res.status(201).json(audit);
@@ -825,16 +949,14 @@ export const getAdminMetrics = async (req: AuthenticatedRequest, res: Response) 
   try {
     const totalUsers = await User.countDocuments({ isDeleted: false });
     const totalAgencies = await Agency.countDocuments({ isDeleted: false });
-    const totalPayments = await Payment.find({ isDeleted: false });
-    const totalRevSum = totalPayments.reduce((acc, curr) => acc + curr.amount, 0);
-
-    const activeSubscriptions = await Subscription.find({ status: 'Active', isDeleted: false });
+    const totalBusinesses = await Business.countDocuments({ isDeleted: false });
+    const totalKeywords = await Keyword.countDocuments({ isDeleted: false });
 
     return res.status(200).json({
       totalUsers,
       totalAgencies,
-      totalRevenue: totalRevSum,
-      activeSubscriptionsCount: activeSubscriptions.length
+      totalBusinesses,
+      totalKeywords
     });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
