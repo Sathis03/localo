@@ -12,6 +12,7 @@ export const AuthPage: React.FC = () => {
   const [name, setName] = useState('');
   const [role, setRole] = useState<'Agency Owner' | 'Business Owner'>('Agency Owner');
   const [agencyName, setAgencyName] = useState('');
+  const [isGoogleRegister, setIsGoogleRegister] = useState(false);
   
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,19 +44,59 @@ export const AuthPage: React.FC = () => {
     }
   };
 
-  const handleGoogleOAuth = () => {
-    // Simulated Google OAuth login flow
+  const handleGoogleCredentialResponse = async (response: any) => {
+    setError(null);
     setLoading(true);
-    setTimeout(() => {
-      setLogin('mock_google_jwt_token', {
-        id: 'user_oauth_123',
-        name: 'Alex Johnson',
-        email: 'alex.johnson@gmail.com',
-        role: 'Agency Owner'
+    try {
+      const res = await axios.post(`${apiBaseUrl}/auth/google-login`, {
+        idToken: response.credential,
       });
+
+      if (res.data.exists) {
+        setLogin(res.data.token, res.data.user);
+      } else {
+        setIsGoogleRegister(true);
+        setActiveTab('register');
+        setEmail(res.data.email);
+        setName(res.data.name);
+        setError('Google verification successful! Please select your role and set a password to create your account.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.error || 'Google login failed.');
+    } finally {
       setLoading(false);
-    }, 1200);
+    }
   };
+
+  React.useEffect(() => {
+    const initGsi = () => {
+      const google = (window as any).google;
+      if (google) {
+        google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '952354818653-dahuatsrqa8jcd4150kq9uajs99cd0mo.apps.googleusercontent.com',
+          callback: handleGoogleCredentialResponse
+        });
+        google.accounts.id.renderButton(
+          document.getElementById('google-signin-btn'),
+          { theme: 'outline', size: 'large', width: 380 }
+        );
+      }
+    };
+
+    const google = (window as any).google;
+    if (google) {
+      initGsi();
+    } else {
+      const interval = setInterval(() => {
+        if ((window as any).google) {
+          initGsi();
+          clearInterval(interval);
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, []);
 
   return (
     <div className="min-height-screen min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-4 relative overflow-hidden">
@@ -76,7 +117,7 @@ export const AuthPage: React.FC = () => {
         <Card className="border-slate-800 bg-slate-950/80 backdrop-blur-md shadow-2xl">
           <div className="flex border-b border-slate-800">
             <button
-              onClick={() => { setActiveTab('login'); setError(null); }}
+              onClick={() => { setActiveTab('login'); setError(null); setIsGoogleRegister(false); setEmail(''); setName(''); }}
               className={`flex-1 py-4 text-center text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${
                 activeTab === 'login' ? 'text-blue-500 border-b-2 border-blue-500 bg-slate-900/40' : 'text-slate-400 hover:text-slate-200'
               }`}
@@ -85,7 +126,7 @@ export const AuthPage: React.FC = () => {
               Sign In
             </button>
             <button
-              onClick={() => { setActiveTab('register'); setError(null); }}
+              onClick={() => { setActiveTab('register'); setError(null); setIsGoogleRegister(false); setEmail(''); setName(''); }}
               className={`flex-1 py-4 text-center text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${
                 activeTab === 'register' ? 'text-blue-500 border-b-2 border-blue-500 bg-slate-900/40' : 'text-slate-400 hover:text-slate-200'
               }`}
@@ -97,7 +138,7 @@ export const AuthPage: React.FC = () => {
 
           <CardContent className="p-6">
             {error && (
-              <Alert variant="danger" className="mb-4 bg-red-950/30 border-red-900/50 text-red-300">
+              <Alert variant={error.includes('successful') ? 'info' : 'danger'} className={`mb-4 border-slate-850 text-sm ${error.includes('successful') ? 'bg-blue-950/30 border-blue-900/50 text-blue-300' : 'bg-red-950/30 border-red-900/50 text-red-300'}`}>
                 <span>{error}</span>
               </Alert>
             )}
@@ -109,10 +150,11 @@ export const AuthPage: React.FC = () => {
                     label="Full Name"
                     type="text"
                     required
+                    disabled={isGoogleRegister}
                     placeholder="Enter your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500"
+                    className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500 disabled:opacity-75 disabled:cursor-not-allowed"
                   />
                   <Select
                     label="I want to manage as"
@@ -142,11 +184,12 @@ export const AuthPage: React.FC = () => {
                 label="Email Address"
                 type="email"
                 required
+                disabled={isGoogleRegister}
                 autoComplete="off"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500"
+                className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500 disabled:opacity-75 disabled:cursor-not-allowed"
               />
 
               <Input
@@ -174,31 +217,9 @@ export const AuthPage: React.FC = () => {
               <span className="relative bg-slate-950 px-3 text-xs text-slate-500 uppercase tracking-wider">Or continue with</span>
             </div>
 
-            <button
-              onClick={handleGoogleOAuth}
-              type="button"
-              className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-slate-800 rounded-lg hover:bg-slate-900 text-slate-350 hover:text-white transition-all cursor-pointer font-semibold text-sm"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.69a5.74 5.74 0 0 1-2.5 3.77v3.13h3.93c2.3-2.12 3.62-5.24 3.62-8.75z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.97-1.08 7.96-2.91l-3.93-3.13c-1.08.73-2.48 1.16-4.03 1.16-3.1 0-5.72-2.09-6.66-4.91H1.31v3.23A12 12 0 0 0 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.34 14.21A7.16 7.16 0 0 1 4.9 12c0-.77.13-1.52.37-2.21V6.56H1.31A12 12 0 0 0 0 12c0 2.25.62 4.35 1.7 6.17l3.64-2.96z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42A11.92 11.92 0 0 0 12 0 12 12 0 0 0 1.3 6.56l4.04 3.23c.94-2.82 3.56-4.91 6.66-4.91z"
-                />
-              </svg>
-              Google Account
-            </button>
+            <div className="flex justify-center w-full min-h-[44px]">
+              <div id="google-signin-btn" className="w-full flex justify-center"></div>
+            </div>
           </CardContent>
         </Card>
       </div>

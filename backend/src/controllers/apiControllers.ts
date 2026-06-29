@@ -97,6 +97,65 @@ export const loginUser = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
+export const googleLogin = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ error: 'idToken is required' });
+    }
+
+    // Verify token with Google API
+    const googleResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+    if (!googleResponse.ok) {
+      return res.status(400).json({ error: 'Invalid Google token' });
+    }
+
+    const payload: any = await googleResponse.json();
+    
+    // Check client ID matching
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    if (GOOGLE_CLIENT_ID && payload.aud !== GOOGLE_CLIENT_ID) {
+      return res.status(400).json({ error: 'Token audience mismatch' });
+    }
+
+    const email = payload.email;
+    const name = payload.name || `${payload.given_name || ''} ${payload.family_name || ''}`.trim();
+
+    // Look for user in database
+    const user = await User.findOne({ email, isDeleted: false });
+
+    if (user) {
+      if (user.status !== 'Active') {
+        return res.status(403).json({ error: 'Your account is suspended or pending approval' });
+      }
+
+      // Generate session token
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role, agencyId: user.agencyId },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      await logActivity(user.id, 'User Logged In via Google');
+
+      return res.status(200).json({
+        exists: true,
+        token,
+        user: { id: user.id, name: user.name, email: user.email, role: user.role, agencyId: user.agencyId }
+      });
+    } else {
+      // User doesn't exist - return information to let them register
+      return res.status(200).json({
+        exists: false,
+        email,
+        name
+      });
+    }
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 // ==========================================
 // DASHBOARD & BUSINESS CONTROLLER
 // ==========================================
