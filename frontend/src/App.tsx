@@ -157,10 +157,12 @@ export default function App() {
         if (found) {
           setActiveBusiness(found);
         } else if (businesses.length > 0) {
-          setActiveBusiness(businesses[0]);
+          const first = businesses[0];
+          setActiveBusiness(first);
+          navigate(`/${slugify(first.name)}/${first._id}/${tab || 'dashboard'}`, { replace: true });
         }
       }
-    }, [businessId, businesses]);
+    }, [businessId, businesses, tab, activeBusiness, navigate]);
 
     const renderTabContent = () => {
       switch (tab) {
