@@ -138,7 +138,7 @@ export const AuthPage: React.FC = () => {
 
           <CardContent className="p-6">
             {error && (
-              <Alert variant={error.includes('successful') ? 'info' : 'danger'} className={`mb-4 border-slate-850 text-sm ${error.includes('successful') ? 'bg-blue-950/30 border-blue-900/50 text-blue-300' : 'bg-red-950/30 border-red-900/50 text-red-300'}`}>
+              <Alert variant={error.includes('successful') ? 'success' : 'danger'} className={`mb-4 border-slate-850 text-sm ${error.includes('successful') ? 'bg-blue-950/30 border-blue-900/50 text-blue-300' : 'bg-red-950/30 border-red-900/50 text-red-300'}`}>
                 <span>{error}</span>
               </Alert>
             )}
