@@ -45,6 +45,7 @@ Render is an excellent hosting platform for persistent Express/Node.js servers. 
 4. Choose the **Free** instance type (or any preferred tier).
 5. Click **Advanced** and add your **Environment Variables**:
    - `NODE_ENV`: `production`
+   - `FRONTEND_URL`: Your deployed frontend Vercel URL (e.g., `https://your-frontend.vercel.app`)
    - `MONGODB_URI`: Your MongoDB Connection String (e.g., MongoDB Atlas connection URL)
    - `JWT_SECRET`: Your secure custom JWT secret key
    - `JWT_REFRESH_SECRET`: Your secure custom refresh JWT secret key
