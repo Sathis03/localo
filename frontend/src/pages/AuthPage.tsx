@@ -38,7 +38,11 @@ export const AuthPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.error || 'Authentication failed. Please verify credentials.');
+      let errMsg = err.response?.data?.error || 'Authentication failed. Please verify credentials.';
+      if (err.response?.data?.details && Array.isArray(err.response.data.details)) {
+        errMsg = err.response.data.details.map((d: any) => `${d.field}: ${d.message}`).join(' | ');
+      }
+      setError(errMsg);
     } finally {
       setLoading(false);
     }
