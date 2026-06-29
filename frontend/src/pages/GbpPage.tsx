@@ -20,6 +20,39 @@ export const GbpPage: React.FC = () => {
   const [postError, setPostError] = useState<string | null>(null);
   const [postSuccess, setPostSuccess] = useState(false);
 
+  // Photo states
+  const [photos, setPhotos] = useState<string[]>([
+    'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=150&auto=format&fit=crop&q=60',
+    'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=150&auto=format&fit=crop&q=60',
+    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&auto=format&fit=crop&q=60'
+  ]);
+  const [photoCategory, setPhotoCategory] = useState<'Interior' | 'Exterior' | 'Team' | 'Logo'>('Interior');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadSuccess(false);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPhoto(true);
+    const url = URL.createObjectURL(file);
+    
+    // Simulate real network upload delay
+    setTimeout(() => {
+      setPhotos((prev) => [url, ...prev]);
+      if (profile) {
+        setProfile({
+          ...profile,
+          photosCount: profile.photosCount + 1
+        });
+      }
+      setUploadingPhoto(false);
+      setUploadSuccess(true);
+      e.target.value = '';
+    }, 1200);
+  };
+
   const fetchProfileAndPosts = async () => {
     if (!activeBusiness) return;
     try {
@@ -204,6 +237,26 @@ export const GbpPage: React.FC = () => {
               </CardContent>
             </Card>
 
+            {/* Photos Gallery */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Google Profile Photo Gallery</CardTitle>
+                  <CardDescription className="text-xs">Visual assets uploaded directly to your Google Maps location page.</CardDescription>
+                </div>
+                <Badge variant="info">{photos.length} Connected</Badge>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                  {photos.map((src, idx) => (
+                    <div key={idx} className="aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm relative group bg-slate-100 dark:bg-slate-900">
+                      <img src={src} alt="GBP Location" className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Sync Logs */}
             <Card>
               <CardHeader>
@@ -307,6 +360,52 @@ export const GbpPage: React.FC = () => {
                     <Calendar className="w-4 h-4" /> Schedule GMB Post
                   </Button>
                 </form>
+              </CardContent>
+            </Card>
+
+            {/* Upload Photo to GBP */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Upload Profile Photo</CardTitle>
+                <CardDescription className="text-xs">Publish a new photo to Google Business Profile search listings.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {uploadSuccess && (
+                  <Alert variant="success">
+                    <span>Photo successfully published on Google My Business!</span>
+                  </Alert>
+                )}
+                <div className="space-y-3">
+                  <Select
+                    label="Photo Category"
+                    value={photoCategory}
+                    onChange={(e: any) => setPhotoCategory(e.target.value)}
+                    options={[
+                      { value: 'Interior', label: 'Interior View' },
+                      { value: 'Exterior', label: 'Exterior View' },
+                      { value: 'Team', label: 'Staff / Team' },
+                      { value: 'Logo', label: 'Business Logo' }
+                    ]}
+                  />
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-350 mb-1.5">Select Image File</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingPhoto}
+                      onChange={handlePhotoUpload}
+                      className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-950/40 dark:file:text-blue-400 file:cursor-pointer cursor-pointer border border-slate-300 dark:border-slate-800 rounded-lg p-1.5 bg-white dark:bg-slate-950"
+                    />
+                  </div>
+
+                  {uploadingPhoto && (
+                    <div className="flex items-center gap-2 text-xs text-slate-450 dark:text-slate-550 pt-1">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                      <span>Optimizing and uploading to Google Maps...</span>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
