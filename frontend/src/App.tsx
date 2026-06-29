@@ -320,7 +320,7 @@ export default function App() {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 flex flex-col h-screen overflow-hidden">
+        <main className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
           {/* Top Header Bar */}
           <header className="h-16 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 z-10">
             <div className="flex items-center gap-3">
