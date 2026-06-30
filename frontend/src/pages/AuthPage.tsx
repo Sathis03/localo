@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { Button, Card, CardContent, Input, Select, Alert } from '../components/ui';
-import { ShieldCheck, LogIn, UserPlus } from 'lucide-react';
+import { ShieldCheck, LogIn, UserPlus, Plus } from 'lucide-react';
 import axios from 'axios';
 
 export const AuthPage: React.FC = () => {
-  const { setLogin, apiBaseUrl } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const { setLogin, setBusinesses, setActiveBusiness, apiBaseUrl } = useAppStore();
+  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'guest_business'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -14,8 +14,36 @@ export const AuthPage: React.FC = () => {
   const [agencyName, setAgencyName] = useState('');
   const [isGoogleRegister, setIsGoogleRegister] = useState(false);
   
+  // Guest business state
+  const [bName, setBName] = useState('');
+  const [bWeb, setBWeb] = useState('');
+  const [bPhone, setBPhone] = useState('');
+  
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const handleGuestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bName.trim()) return;
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await axios.post(`${apiBaseUrl}/auth/guest-add-business`, {
+        name: bName,
+        websiteUrl: bWeb,
+        phone: bPhone
+      });
+      setLogin(res.data.token, res.data.user);
+      setBusinesses([res.data.business]);
+      setActiveBusiness(res.data.business);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.error || 'Failed to add business profile.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,6 +166,15 @@ export const AuthPage: React.FC = () => {
               <UserPlus className="w-4 h-4" />
               Create Account
             </button>
+            <button
+              onClick={() => { setActiveTab('guest_business'); setError(null); setIsGoogleRegister(false); }}
+              className={`flex-1 py-4 text-center text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                activeTab === 'guest_business' ? 'text-blue-500 border-b-2 border-blue-500 bg-slate-900/40' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Plus className="w-4 h-4" />
+              Add Business
+            </button>
           </div>
 
           <CardContent className="p-6">
@@ -147,74 +184,111 @@ export const AuthPage: React.FC = () => {
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {activeTab === 'register' && (
-                <>
-                  <Input
-                    label="Full Name"
-                    type="text"
-                    required
-                    disabled={isGoogleRegister}
-                    placeholder="Enter your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500 disabled:opacity-75 disabled:cursor-not-allowed"
-                  />
-                  <Select
-                    label="I want to manage as"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value as any)}
-                    options={[
-                      { value: 'Agency Owner', label: 'SEO Agency Owner' },
-                      { value: 'Business Owner', label: 'Local Business Owner' }
-                    ]}
-                    className="border-slate-800 bg-slate-900 text-slate-100"
-                  />
-                  {role === 'Agency Owner' && (
+            {activeTab === 'guest_business' ? (
+              <form onSubmit={handleGuestSubmit} className="space-y-4">
+                <Input
+                  label="Business/Profile Name"
+                  type="text"
+                  required
+                  placeholder="e.g. California Dental Clinic"
+                  value={bName}
+                  onChange={(e) => setBName(e.target.value)}
+                  className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500"
+                />
+                <Input
+                  label="Website Homepage URL"
+                  type="text"
+                  placeholder="https://californiadental.com"
+                  value={bWeb}
+                  onChange={(e) => setBWeb(e.target.value)}
+                  className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500"
+                />
+                <Input
+                  label="Phone Number"
+                  type="text"
+                  placeholder="+1 555-0199"
+                  value={bPhone}
+                  onChange={(e) => setBPhone(e.target.value)}
+                  className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500"
+                />
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg cursor-pointer"
+                >
+                  {loading ? 'Processing...' : 'Track Local Business'}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {activeTab === 'register' && (
+                  <>
                     <Input
-                      label="Agency Name"
+                      label="Full Name"
                       type="text"
                       required
-                      placeholder="e.g. Acme Marketing Agency"
-                      value={agencyName}
-                      onChange={(e) => setAgencyName(e.target.value)}
-                      className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500"
+                      disabled={isGoogleRegister}
+                      placeholder="Enter your name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500 disabled:opacity-75 disabled:cursor-not-allowed"
                     />
-                  )}
-                </>
-              )}
+                    <Select
+                      label="I want to manage as"
+                      value={role}
+                      onChange={(e) => setRole(e.target.value as any)}
+                      options={[
+                        { value: 'Agency Owner', label: 'SEO Agency Owner' },
+                        { value: 'Business Owner', label: 'Local Business Owner' }
+                      ]}
+                      className="border-slate-800 bg-slate-900 text-slate-100"
+                    />
+                    {role === 'Agency Owner' && (
+                      <Input
+                        label="Agency Name"
+                        type="text"
+                        required
+                        placeholder="e.g. Acme Marketing Agency"
+                        value={agencyName}
+                        onChange={(e) => setAgencyName(e.target.value)}
+                        className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500"
+                      />
+                    )}
+                  </>
+                )}
 
-              <Input
-                label="Email Address"
-                type="email"
-                required
-                disabled={isGoogleRegister}
-                autoComplete="off"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500 disabled:opacity-75 disabled:cursor-not-allowed"
-              />
+                <Input
+                  label="Email Address"
+                  type="email"
+                  required
+                  disabled={isGoogleRegister}
+                  autoComplete="off"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500 disabled:opacity-75 disabled:cursor-not-allowed"
+                />
 
-              <Input
-                label="Password"
-                type="password"
-                required
-                autoComplete="off"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500"
-              />
+                <Input
+                  label="Password"
+                  type="password"
+                  required
+                  autoComplete="off"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="border-slate-800 bg-slate-900/50 text-slate-100 placeholder-slate-500"
+                />
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg cursor-pointer"
-              >
-                {loading ? 'Processing...' : activeTab === 'login' ? 'Sign In' : 'Register Account'}
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg cursor-pointer"
+                >
+                  {loading ? 'Processing...' : activeTab === 'login' ? 'Sign In' : 'Register Account'}
+                </Button>
+              </form>
+            )}
 
             <div className="relative my-6 text-center">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800"></div></div>

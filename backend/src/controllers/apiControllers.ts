@@ -156,6 +156,68 @@ export const googleLogin = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
+export const guestAddBusiness = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, websiteUrl, phone } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'Business name is required' });
+    }
+
+    const randomId = Math.random().toString(36).substring(2, 8);
+    const guestEmail = `guest_${randomId}@localrankpro.com`;
+    const guestName = `Guest ${randomId}`;
+    const dummyPassword = Math.random().toString(36) + Math.random().toString(36);
+    const passwordHash = await bcrypt.hash(dummyPassword, 10);
+
+    const newUser = await User.create({
+      name: guestName,
+      email: guestEmail,
+      passwordHash,
+      role: 'Business Owner',
+      status: 'Active'
+    });
+
+    await logActivity(newUser.id, 'User Registered', 'Registered as role: Business Owner (Guest)');
+
+    const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role, agencyId: newUser.agencyId }, JWT_SECRET, { expiresIn: '24h' });
+
+    const newBusiness = await Business.create({
+      name,
+      websiteUrl,
+      phone,
+      ownerId: newUser._id,
+      seoScore: 68
+    });
+
+    await logActivity(newUser.id, 'Create Business', `Created business: ${name}`);
+
+    // Auto-generate some initial SEO tasks
+    const initialTasks = [
+      { businessId: newBusiness._id, title: 'Verify Google Business Profile connection', category: 'GBP Optimization', priority: 'High', status: 'Pending' },
+      { businessId: newBusiness._id, title: 'Set up 5 primary tracking keywords', category: 'Technical SEO', priority: 'High', status: 'Pending' },
+      { businessId: newBusiness._id, title: 'Generate LocalBusiness Schema JSON-LD', category: 'Technical SEO', priority: 'Medium', status: 'Pending' },
+      { businessId: newBusiness._id, title: 'Perform initial Website Speed and SEO Audit', category: 'Technical SEO', priority: 'Medium', status: 'Pending' }
+    ];
+    await Task.insertMany(initialTasks);
+
+    // Set up default citations
+    const defaultCitations = [
+      { businessId: newBusiness._id, directoryName: 'Google', status: 'Not Submitted' },
+      { businessId: newBusiness._id, directoryName: 'Bing Places', status: 'Not Submitted' },
+      { businessId: newBusiness._id, directoryName: 'Yelp', status: 'Not Submitted' }
+    ];
+    await Citation.insertMany(defaultCitations);
+
+    return res.status(201).json({
+      token,
+      user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role, agencyId: newUser.agencyId },
+      business: newBusiness
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 // ==========================================
 // DASHBOARD & BUSINESS CONTROLLER
 // ==========================================

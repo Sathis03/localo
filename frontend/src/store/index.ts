@@ -41,6 +41,10 @@ interface AppState {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
   apiBaseUrl: string;
+
+  // Add Business Modal
+  isAddBusinessOpen: boolean;
+  setIsAddBusinessOpen: (open: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -79,6 +83,10 @@ export const useAppStore = create<AppState>((set) => ({
     }
     return { isDarkMode: nextMode };
   }),
+
+  // Add Business Modal
+  isAddBusinessOpen: false,
+  setIsAddBusinessOpen: (isAddBusinessOpen) => set({ isAddBusinessOpen }),
 
   // Target Backend API Server
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1',
