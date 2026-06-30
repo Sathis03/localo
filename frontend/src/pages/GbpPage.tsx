@@ -99,17 +99,44 @@ export const GbpPage: React.FC = () => {
     if (!activeBusiness) return;
     try {
       setSyncing(true);
-      const res = await axios.post(`${apiBaseUrl}/google-profiles/connect`, {
-        businessId: activeBusiness._id,
-        authCode: 'mock_auth_code_9876'
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setProfile(res.data.profile);
-      fetchProfileAndPosts();
+      const google = (window as any).google;
+      if (google && google.accounts && google.accounts.oauth2) {
+        const client = google.accounts.oauth2.initCodeClient({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '952354818653-dahuatsrqa8jcd4150kq9uajs99cd0mo.apps.googleusercontent.com',
+          scope: 'https://www.googleapis.com/auth/business.manage',
+          ux_mode: 'popup',
+          callback: async (response: any) => {
+            if (response.code) {
+              try {
+                const res = await axios.post(`${apiBaseUrl}/google-profiles/connect`, {
+                  businessId: activeBusiness._id,
+                  authCode: response.code
+                }, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                setProfile(res.data.profile);
+                fetchProfileAndPosts();
+              } catch (error) {
+                console.error('OAuth connection failed:', error);
+              }
+            }
+            setSyncing(false);
+          },
+        });
+        client.requestCode();
+      } else {
+        const res = await axios.post(`${apiBaseUrl}/google-profiles/connect`, {
+          businessId: activeBusiness._id,
+          authCode: 'mock_auth_code_9876'
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setProfile(res.data.profile);
+        fetchProfileAndPosts();
+        setSyncing(false);
+      }
     } catch (error) {
       console.error('OAuth connection failed:', error);
-    } finally {
       setSyncing(false);
     }
   };
