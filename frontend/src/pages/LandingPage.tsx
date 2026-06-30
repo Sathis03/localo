@@ -297,7 +297,7 @@ export const LandingPage: React.FC = () => {
               <div className="space-y-4">
                 <div className="space-y-1">
                   <h3 className="text-lg font-bold text-white">Starter</h3>
-                  <p className="text-xs text-slate-550">Perfect for single local businesses</p>
+                  <p className="text-xs text-slate-555">Perfect for single local businesses</p>
                 </div>
                 <div className="flex items-baseline text-white">
                   <span className="text-3xl font-black">$29</span>
@@ -328,7 +328,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <div className="flex items-baseline text-white">
                   <span className="text-3xl font-black">$79</span>
-                  <span className="text-xs text-slate-550 font-semibold ml-1">/ month</span>
+                  <span className="text-xs text-slate-555 font-semibold ml-1">/ month</span>
                 </div>
                 <hr className="border-slate-800" />
                 <ul className="space-y-3 text-xs text-slate-300 font-medium">
@@ -349,11 +349,11 @@ export const LandingPage: React.FC = () => {
               <div className="space-y-4">
                 <div className="space-y-1">
                   <h3 className="text-lg font-bold text-white">Agency</h3>
-                  <p className="text-xs text-slate-550">For marketing agencies & consultancies</p>
+                  <p className="text-xs text-slate-555">For marketing agencies & consultancies</p>
                 </div>
                 <div className="flex items-baseline text-white">
                   <span className="text-3xl font-black">$199</span>
-                  <span className="text-xs text-slate-550 font-semibold ml-1">/ month</span>
+                  <span className="text-xs text-slate-555 font-semibold ml-1">/ month</span>
                 </div>
                 <hr className="border-slate-800/80" />
                 <ul className="space-y-3 text-xs text-slate-400">
@@ -366,6 +366,83 @@ export const LandingPage: React.FC = () => {
               <Button onClick={() => navigate('/auth')} variant="outline" className="w-full mt-6 py-2.5 text-xs text-slate-350 hover:text-white border-slate-800">
                 Start Trial
               </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="border-t border-slate-900 py-20 md:py-28 bg-slate-950">
+        <div className="max-w-7xl mx-auto px-6 text-center space-y-16">
+          <div className="space-y-4">
+            <h2 className="text-3xl font-black text-white">Trusted by Local Businesses</h2>
+            <p className="text-slate-400 text-sm max-w-xl mx-auto leading-relaxed">
+              Read how local business owners and SEO agencies use LocalRank Pro to dominate local search results.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-slate-900/30 border border-slate-900 rounded-3xl p-6 text-left space-y-4">
+              <p className="text-slate-305 italic text-xs leading-relaxed">
+                "LocalRank Pro transformed our search rank tracking. The 3x3 search ranking grid maps position tracking perfectly. Our bakery went from position #12 to #2 in less than 30 days!"
+              </p>
+              <div>
+                <h4 className="font-bold text-xs text-white">Chef Marco</h4>
+                <p className="text-[10px] text-slate-500">Owner, Marco's Artisan Bakery</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-900/30 border border-slate-900 rounded-3xl p-6 text-left space-y-4">
+              <p className="text-slate-305 italic text-xs leading-relaxed">
+                "The review auto-reply AI is a lifesaver. We answer customer feedback on Google Maps instantly without losing context. It has significantly improved our profile ranking!"
+              </p>
+              <div>
+                <h4 className="font-bold text-xs text-white">Dr. Sarah Lopez</h4>
+                <p className="text-[10px] text-slate-500">Director, California Dental Care</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-900/30 border border-slate-900 rounded-3xl p-6 text-left space-y-4">
+              <p className="text-slate-305 italic text-xs leading-relaxed">
+                "Managing local SEO clients is seamless. The automatic audits and competitor comparisons generate instant value report cards. Highly recommended for any agency."
+              </p>
+              <div>
+                <h4 className="font-bold text-xs text-white">Alex Sterling</h4>
+                <p className="text-[10px] text-slate-500">Founder, Sterling SEO Agency</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="border-t border-slate-900 py-20 bg-slate-950/50">
+        <div className="max-w-4xl mx-auto px-6 space-y-12">
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl font-black text-white">Frequently Asked Questions</h2>
+            <p className="text-slate-400 text-sm">Everything you need to know about our Local SEO platform.</p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="p-6 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-2">
+              <h4 className="font-bold text-sm text-white">How does the interactive rank tracker grid work?</h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Our tracker scans Google Maps search results at specific coordinates around your physical address to visualize your rank positions on a 3x3 or 5x5 geographical grid.
+              </p>
+            </div>
+
+            <div className="p-6 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-2">
+              <h4 className="font-bold text-sm text-white">Can I connect multiple Google Business Profiles?</h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Yes! Depending on your subscription plan, you can connect and sync multiple locations under a single consolidated account dashboard.
+              </p>
+            </div>
+
+            <div className="p-6 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-2">
+              <h4 className="font-bold text-sm text-white">Is the AI review response safe?</h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Absolutely. The system generates contextual, professional responses based on ratings and comments. You can review them in the editor or enable auto-replies.
+              </p>
             </div>
           </div>
         </div>

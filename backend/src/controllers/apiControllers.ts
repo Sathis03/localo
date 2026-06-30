@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 import mongoose from 'mongoose';
 import { AuthenticatedRequest } from '../middleware/auth';
 import {
@@ -152,6 +153,58 @@ export const googleLogin = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
   } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const forgotPassword = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email, isDeleted: false });
+    if (!user) {
+      return res.status(404).json({ error: 'User with this email does not exist' });
+    }
+
+    // Generate a secure random temporary password
+    const tempPassword = 'LR_' + Math.random().toString(36).substr(2, 8);
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+    user.passwordHash = passwordHash;
+    await user.save();
+
+    // Create SMTP transport
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: Number(process.env.SMTP_PORT) || 465,
+      secure: true,
+      auth: {
+        user: process.env.SMTP_USER || '',
+        pass: process.env.SMTP_PASS || ''
+      }
+    });
+
+    const mailOptions = {
+      from: `"LocalRank Pro Support" <${process.env.SMTP_FROM || 'support@localrankpro.com'}>`,
+      to: email,
+      subject: 'Temporary Password Reset - LocalRank Pro',
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; color: #1e293b;">
+          <h2 style="color: #2563eb;">LocalRank Pro Password Reset</h2>
+          <p>Hello ${user.name},</p>
+          <p>We received a request to reset the password for your LocalRank Pro account.</p>
+          <p>Your temporary password is: <strong style="font-size: 16px; color: #2563eb; background-color: #eff6ff; padding: 4px 8px; border-radius: 4px;">${tempPassword}</strong></p>
+          <p>Please log in using this temporary password and update it immediately in your account profile settings.</p>
+          <p style="font-size: 11px; color: #64748b; margin-top: 30px;">If you did not request this, please secure your account.</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    await logActivity(user.id, 'Password Reset Requested', 'Sent temporary password via SMTP');
+
+    return res.status(200).json({ success: true, message: 'Temporary password sent to email successfully' });
+  } catch (error: any) {
+    console.error('Forgot password error:', error);
     return res.status(500).json({ error: error.message });
   }
 };

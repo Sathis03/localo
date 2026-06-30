@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticateJWT, requireRoles } from '../middleware/auth';
 import {
-  registerUser, loginUser, googleLogin, guestAddBusiness, getDashboardMetrics, createBusiness, getBusinesses,
+  registerUser, loginUser, googleLogin, forgotPassword, guestAddBusiness, getDashboardMetrics, createBusiness, getBusinesses,
   connectGoogleAccount, getGoogleProfile, getGbpPosts, createGbpPost, getGbpPhotos, uploadGbpPhoto, addKeyword, getKeywords, getGridRankings,
   getReviews, replyToReview, generateAiReviewResponse, autoReplyReview, autoReplyAllReviews, addCompetitor, getCompetitors,
   getCitations, updateCitationStatus, runSeoAudit, runWebsiteAudit, getTasks,
@@ -17,6 +17,7 @@ import { validateRequest, registerSchema, loginSchema } from '../middleware/vali
 router.post('/auth/register', validateRequest(registerSchema), registerUser);
 router.post('/auth/login', validateRequest(loginSchema), loginUser);
 router.post('/auth/google-login', googleLogin);
+router.post('/auth/forgot-password', forgotPassword);
 router.post('/auth/guest-add-business', guestAddBusiness);
 
 // Dashboard

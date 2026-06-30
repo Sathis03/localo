@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { useAppStore } from '../store';
-import { Button, Card, CardContent, Input, Select, Alert } from '../components/ui';
-import { ShieldCheck, LogIn, UserPlus, Plus } from 'lucide-react';
 import axios from 'axios';
+import { LogIn, Plus, ShieldCheck, UserPlus } from 'lucide-react';
+import React, { useState } from 'react';
+import { Alert, Button, Card, CardContent, Input, Select } from '../components/ui';
+import { useAppStore } from '../store';
 
 export const AuthPage: React.FC = () => {
   const { setLogin, setBusinesses, setActiveBusiness, apiBaseUrl } = useAppStore();
@@ -13,12 +13,12 @@ export const AuthPage: React.FC = () => {
   const [role, setRole] = useState<'Agency Owner' | 'Business Owner'>('Agency Owner');
   const [agencyName, setAgencyName] = useState('');
   const [isGoogleRegister, setIsGoogleRegister] = useState(false);
-  
+
   // Guest business state
   const [bName, setBName] = useState('');
   const [bWeb, setBWeb] = useState('');
   const [bPhone, setBPhone] = useState('');
-  
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -150,27 +150,24 @@ export const AuthPage: React.FC = () => {
           <div className="flex border-b border-slate-800">
             <button
               onClick={() => { setActiveTab('login'); setError(null); setIsGoogleRegister(false); setEmail(''); setName(''); }}
-              className={`flex-1 py-4 text-center text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                activeTab === 'login' ? 'text-blue-500 border-b-2 border-blue-500 bg-slate-900/40' : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`flex-1 py-4 text-center text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${activeTab === 'login' ? 'text-blue-500 border-b-2 border-blue-500 bg-slate-900/40' : 'text-slate-400 hover:text-slate-200'
+                }`}
             >
               <LogIn className="w-4 h-4" />
               Sign In
             </button>
             <button
               onClick={() => { setActiveTab('register'); setError(null); setIsGoogleRegister(false); setEmail(''); setName(''); }}
-              className={`flex-1 py-4 text-center text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                activeTab === 'register' ? 'text-blue-500 border-b-2 border-blue-500 bg-slate-900/40' : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`flex-1 py-4 text-center text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${activeTab === 'register' ? 'text-blue-500 border-b-2 border-blue-500 bg-slate-900/40' : 'text-slate-400 hover:text-slate-200'
+                }`}
             >
               <UserPlus className="w-4 h-4" />
               Create Account
             </button>
             <button
               onClick={() => { setActiveTab('guest_business'); setError(null); setIsGoogleRegister(false); }}
-              className={`flex-1 py-4 text-center text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                activeTab === 'guest_business' ? 'text-blue-500 border-b-2 border-blue-500 bg-slate-900/40' : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`flex-1 py-4 text-center text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${activeTab === 'guest_business' ? 'text-blue-500 border-b-2 border-blue-500 bg-slate-900/40' : 'text-slate-400 hover:text-slate-200'
+                }`}
             >
               <Plus className="w-4 h-4" />
               Add Business
