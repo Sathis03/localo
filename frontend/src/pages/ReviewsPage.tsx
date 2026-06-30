@@ -16,6 +16,8 @@ export const ReviewsPage: React.FC = () => {
   const [replyText, setReplyText] = useState('');
   const [generatingAi, setGeneratingAi] = useState(false);
   const [submittingReply, setSubmittingReply] = useState(false);
+  const [autoReplyingReviewId, setAutoReplyingReviewId] = useState<string | null>(null);
+  const [bulkAutoReplying, setBulkAutoReplying] = useState(false);
 
   const fetchReviews = async () => {
     if (!activeBusiness) return;
@@ -30,6 +32,40 @@ export const ReviewsPage: React.FC = () => {
       console.error('Failed to fetch reviews:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAutoReply = async (reviewId: string) => {
+    try {
+      setAutoReplyingReviewId(reviewId);
+      await axios.post(`${apiBaseUrl}/reviews/auto-reply`, {
+        reviewId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchReviews();
+    } catch (err) {
+      console.error('Failed to auto reply:', err);
+    } finally {
+      setAutoReplyingReviewId(null);
+    }
+  };
+
+  const handleAutoReplyAll = async () => {
+    if (!activeBusiness) return;
+    try {
+      setBulkAutoReplying(true);
+      const res = await axios.post(`${apiBaseUrl}/reviews/auto-reply-all`, {
+        businessId: activeBusiness._id
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setReviews(res.data);
+      setFilteredReviews(res.data);
+    } catch (err) {
+      console.error('Failed to auto reply all:', err);
+    } finally {
+      setBulkAutoReplying(false);
     }
   };
 
@@ -102,25 +138,37 @@ export const ReviewsPage: React.FC = () => {
       {/* Filters Header */}
       <Card>
         <CardContent className="p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-blue-500" />
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Filter reviews by sentiment:</span>
+          <div className="flex flex-col md:flex-row md:items-center gap-4 flex-1">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-blue-500" />
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Filter reviews by sentiment:</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(['All', 'Positive', 'Neutral', 'Negative'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setSentimentFilter(filter)}
+                  className={`px-3 py-1 text-xs font-semibold rounded-lg cursor-pointer transition-all ${
+                    sentimentFilter === filter
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-350'
+                  }`}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {(['All', 'Positive', 'Neutral', 'Negative'] as const).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setSentimentFilter(filter)}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg cursor-pointer transition-all ${
-                  sentimentFilter === filter
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-350'
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
+          {reviews.some((r) => !r.isReplied) && (
+            <Button
+              onClick={handleAutoReplyAll}
+              disabled={bulkAutoReplying}
+              className="w-full md:w-auto flex items-center justify-center gap-1.5 text-xs bg-purple-600 hover:bg-purple-750 text-white font-semibold"
+            >
+              <Sparkles className="w-4 h-4" />
+              {bulkAutoReplying ? 'Auto-Replying All...' : 'Auto-Reply All Unanswered (AI)'}
+            </Button>
+          )}
         </CardContent>
       </Card>
 
@@ -178,15 +226,27 @@ export const ReviewsPage: React.FC = () => {
                     </span>
 
                     {!rev.isReplied && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleGenerateAiResponse(rev)}
-                        className="flex items-center gap-1.5 cursor-pointer text-xs"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                        AI Response
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleAutoReply(rev._id)}
+                          disabled={autoReplyingReviewId === rev._id}
+                          className="flex items-center gap-1.5 cursor-pointer text-xs"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-purple-550" />
+                          {autoReplyingReviewId === rev._id ? 'Replying...' : 'Auto Reply (AI)'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleGenerateAiResponse(rev)}
+                          className="flex items-center gap-1.5 cursor-pointer text-xs"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                          AI Editor
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </CardContent>

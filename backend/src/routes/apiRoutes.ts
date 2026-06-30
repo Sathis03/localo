@@ -3,7 +3,7 @@ import { authenticateJWT, requireRoles } from '../middleware/auth';
 import {
   registerUser, loginUser, googleLogin, guestAddBusiness, getDashboardMetrics, createBusiness, getBusinesses,
   connectGoogleAccount, getGoogleProfile, getGbpPosts, createGbpPost, getGbpPhotos, uploadGbpPhoto, addKeyword, getKeywords, getGridRankings,
-  getReviews, replyToReview, generateAiReviewResponse, addCompetitor, getCompetitors,
+  getReviews, replyToReview, generateAiReviewResponse, autoReplyReview, autoReplyAllReviews, addCompetitor, getCompetitors,
   getCitations, updateCitationStatus, runSeoAudit, runWebsiteAudit, getTasks,
   createTask, updateTaskStatus, generateAiContent, createSchema, getSchemas,
   generateReport, getReports, getSubscription, getAdminMetrics
@@ -43,6 +43,8 @@ router.get('/keywords/grid', authenticateJWT, getGridRankings);
 router.get('/reviews', authenticateJWT, getReviews);
 router.post('/reviews/reply', authenticateJWT, replyToReview);
 router.post('/reviews/ai-reply', authenticateJWT, generateAiReviewResponse);
+router.post('/reviews/auto-reply', authenticateJWT, autoReplyReview);
+router.post('/reviews/auto-reply-all', authenticateJWT, autoReplyAllReviews);
 
 // Competitors
 router.post('/competitors', authenticateJWT, addCompetitor);

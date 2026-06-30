@@ -740,6 +740,79 @@ export const generateAiReviewResponse = async (req: AuthenticatedRequest, res: R
   }
 };
 
+const generateAiResponseText = (rating: number) => {
+  if (rating >= 4) {
+    return `Thank you so much for the positive rating! We are thrilled that you enjoyed our services. We look forward to helping you again in the future!`;
+  } else if (rating === 3) {
+    return `Thank you for your feedback. We aim to deliver 5-star services and would love to know what we could have done to make your experience better. Please contact our support team.`;
+  } else {
+    return `We are very sorry to hear about your experience. Customer satisfaction is our top priority. We would appreciate the opportunity to discuss this further to make things right. Please reach out to us directly.`;
+  }
+};
+
+export const autoReplyReview = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { reviewId } = req.body;
+    const review = await Review.findById(reviewId);
+    if (!review) return res.status(404).json({ error: 'Review not found' });
+
+    const replyText = generateAiResponseText(review.rating);
+
+    const reply = await ReviewReply.create({
+      reviewId,
+      replyText,
+      replyType: 'AI',
+      status: 'Posted',
+      postedAt: new Date()
+    });
+
+    review.isReplied = true;
+    await review.save();
+
+    await logActivity(req.user!.id, 'Auto Reply Review', `Auto replied to review by ${review.reviewerName}`);
+
+    return res.status(200).json({ success: true, reply, review });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const autoReplyAllReviews = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { businessId } = req.body;
+    const gProfile = await GoogleProfile.findOne({ businessId, isDeleted: false });
+    if (!gProfile) {
+      return res.status(404).json({ error: 'Google Profile not connected' });
+    }
+
+    const reviews = await Review.find({ googleProfileId: gProfile._id, isReplied: false, isDeleted: false });
+    
+    for (const review of reviews) {
+      const replyText = generateAiResponseText(review.rating);
+      await ReviewReply.create({
+        reviewId: review._id as mongoose.Types.ObjectId,
+        replyText,
+        replyType: 'AI',
+        status: 'Posted',
+        postedAt: new Date()
+      });
+
+      review.isReplied = true;
+      await review.save();
+    }
+
+    if (req.user) {
+      await logActivity(req.user.id, 'Auto Reply All Reviews', `Auto replied to ${reviews.length} reviews`);
+    }
+
+    // Fetch all reviews to return the updated list
+    const allReviews = await Review.find({ googleProfileId: gProfile._id, isDeleted: false }).sort({ publishDate: -1 });
+    return res.status(200).json(allReviews);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 // ==========================================
 // COMPETITOR ANALYSIS CONTROLLER
 // ==========================================
