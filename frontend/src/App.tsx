@@ -315,10 +315,10 @@ export default function App() {
     <>
       <Routes>
         <Route path="/auth" element={<Navigate to="/" replace />} />
-        <Route path="/" element={<Navigate to="/" replace />} />
+        <Route path="/" element={<HomeRedirect />} />
         <Route path="/admin" element={user?.role === 'Super Admin' ? <AdminLayout /> : <Navigate to="/" replace />} />
         <Route path="/:businessSlug/:businessId/:tab" element={<MainLayout />} />
-        <Route path="*" element={<HomeRedirect />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <AddBusinessModal />
     </>
