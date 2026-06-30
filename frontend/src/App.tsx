@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
 import { useAppStore } from './store';
 import { AuthPage } from './pages/AuthPage';
+import { LandingPage } from './pages/LandingPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { GbpPage } from './pages/GbpPage';
 import { RankTrackerPage } from './pages/RankTrackerPage';
@@ -303,7 +304,9 @@ export default function App() {
   if (!isAuthenticated) {
     return (
       <Routes>
-        <Route path="*" element={<AuthPage />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
   }
@@ -312,6 +315,7 @@ export default function App() {
     <>
       <Routes>
         <Route path="/auth" element={<Navigate to="/" replace />} />
+        <Route path="/" element={<Navigate to="/" replace />} />
         <Route path="/admin" element={user?.role === 'Super Admin' ? <AdminLayout /> : <Navigate to="/" replace />} />
         <Route path="/:businessSlug/:businessId/:tab" element={<MainLayout />} />
         <Route path="*" element={<HomeRedirect />} />
