@@ -7,6 +7,7 @@ import axios from 'axios';
 export const CompetitorsPage: React.FC = () => {
   const { activeBusiness, token, apiBaseUrl } = useAppStore();
   const [competitors, setCompetitors] = useState<any[]>([]);
+  const [myProfile, setMyProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Add competitor form
@@ -23,6 +24,15 @@ export const CompetitorsPage: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCompetitors(res.data);
+
+      try {
+        const profileRes = await axios.get(`${apiBaseUrl}/google-profiles?businessId=${activeBusiness._id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMyProfile(profileRes.data);
+      } catch (e) {
+        setMyProfile(null);
+      }
     } catch (error) {
       console.error('Failed to fetch competitors:', error);
     } finally {
@@ -59,6 +69,59 @@ export const CompetitorsPage: React.FC = () => {
     } catch (error: any) {
       setAddError('Failed to add competitor.');
     }
+  };
+
+  const getInsights = () => {
+    if (competitors.length === 0) {
+      return (
+        <p className="text-slate-500 dark:text-slate-400 text-xs">
+          Add competitors to analyze review and photo count gaps.
+        </p>
+      );
+    }
+
+    const reviewLeader = [...competitors].sort((a, b) => (b.reviewsCount || 0) - (a.reviewsCount || 0))[0];
+    const photoLeader = [...competitors].sort((a, b) => (b.photosCount || 0) - (a.photosCount || 0))[0];
+
+    const myReviews = myProfile?.reviewsCount || 0;
+    const myPhotos = myProfile?.photosCount || 0;
+
+    const reviewGap = (reviewLeader.reviewsCount || 0) - myReviews;
+    const photoGap = (photoLeader.photosCount || 0) - myPhotos;
+
+    return (
+      <div className="space-y-4">
+        <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl space-y-2 text-xs">
+          <h4 className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+            <BarChart3 className="w-4 h-4" /> Review Gap Opportunity
+          </h4>
+          {reviewGap > 0 ? (
+            <p className="text-slate-600 dark:text-slate-350 leading-relaxed">
+              Competitor <strong>{reviewLeader.name}</strong> leads with <strong>{reviewLeader.reviewsCount}</strong> reviews. You currently have <strong>{myReviews}</strong>. Collect <strong>{reviewGap + 5}</strong> more high-rating reviews to close the competitive gap.
+            </p>
+          ) : (
+            <p className="text-slate-600 dark:text-slate-350 leading-relaxed">
+              Great job! You lead local reviews with <strong>{myReviews}</strong> reviews, ahead of <strong>{reviewLeader.name}</strong> (who has {reviewLeader.reviewsCount}). Maintain your lead by collecting 2-3 reviews weekly!
+            </p>
+          )}
+        </div>
+
+        <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl space-y-2 text-xs">
+          <h4 className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+            <ShieldAlert className="w-4 h-4" /> Photo Signal Delta
+          </h4>
+          {photoGap > 0 ? (
+            <p className="text-slate-600 dark:text-slate-350 leading-relaxed">
+              <strong>{photoLeader.name}</strong> has published <strong>{photoLeader.photosCount}</strong> photos. Your profile currently has <strong>{myPhotos}</strong> photos. We recommend uploading <strong>{photoGap + 3}</strong> high-resolution geotagged photos to match their search visual signals.
+            </p>
+          ) : (
+            <p className="text-slate-600 dark:text-slate-350 leading-relaxed">
+              Your profile has <strong>{myPhotos}</strong> photos, exceeding <strong>{photoLeader.name}</strong>'s count of <strong>{photoLeader.photosCount}</strong>. Keep sharing visual updates to retain your visual relevance.
+            </p>
+          )}
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -179,23 +242,7 @@ export const CompetitorsPage: React.FC = () => {
               <CardDescription className="text-xs">Identified search opportunities.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl space-y-2 text-xs">
-                <h4 className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
-                  <BarChart3 className="w-4 h-4" /> Review Gap Opportunity
-                </h4>
-                <p className="text-slate-600 dark:text-slate-350 leading-relaxed">
-                  Competitor B has 32 reviews with a rating of 4.6. You currently have fewer reviews. Collect 10 more high-rating reviews to improve maps ranking signals.
-                </p>
-              </div>
-
-              <div className="p-4 bg-amber-550/5 dark:bg-amber-950/10 border border-amber-500/15 rounded-xl space-y-2 text-xs">
-                <h4 className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                  <ShieldAlert className="w-4 h-4" /> Photo Signal Delta
-                </h4>
-                <p className="text-slate-600 dark:text-slate-350 leading-relaxed">
-                  Rivals upload photos at a 15% higher weekly rate. We recommend uploading 5 high-resolution geotagged photos of your products or storefront to stay competitive.
-                </p>
-              </div>
+              {getInsights()}
             </CardContent>
           </Card>
         </div>

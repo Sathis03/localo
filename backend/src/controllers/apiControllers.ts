@@ -746,14 +746,74 @@ export const generateAiReviewResponse = async (req: AuthenticatedRequest, res: R
 export const addCompetitor = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { businessId, name, websiteUrl, primaryCategory } = req.body;
+
+    let reviewsCount = Math.floor(Math.random() * 50) + 5;
+    let averageRating = Number((Math.random() * 1.5 + 3.5).toFixed(1));
+    let photosCount = Math.floor(Math.random() * 20) + 1;
+    let detectedCategory = primaryCategory || 'Local Business';
+
+    if (websiteUrl && (websiteUrl.startsWith('http://') || websiteUrl.startsWith('https://'))) {
+      try {
+        const response = await fetch(websiteUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          },
+          signal: AbortSignal.timeout(5000)
+        });
+
+        if (response.ok) {
+          const html = await response.text();
+
+          // 1. Count images (real photosCount)
+          const imgMatches = html.match(/<img[^>]*>/gi) || [];
+          if (imgMatches.length > 0) {
+            photosCount = imgMatches.length;
+          }
+
+          // 2. Look for rating patterns
+          const ratingMatch = html.match(/(\d\.\d)\s*(?:out of 5|stars|rating)/i) || 
+                              html.match(/(?:rating|score)\s*(?:of|:)?\s*(\d\.\d)/i);
+          if (ratingMatch && ratingMatch[1]) {
+            const parsedRating = parseFloat(ratingMatch[1]);
+            if (parsedRating >= 1.0 && parsedRating <= 5.0) {
+              averageRating = parsedRating;
+            }
+          }
+
+          // 3. Look for reviews count patterns
+          const reviewsMatch = html.match(/(\d{1,4})\s*(?:reviews|customer reviews|ratings)/i);
+          if (reviewsMatch && reviewsMatch[1]) {
+            const parsedReviews = parseInt(reviewsMatch[1], 10);
+            if (parsedReviews > 0) {
+              reviewsCount = parsedReviews;
+            }
+          }
+
+          // 4. Try to detect category
+          if (!detectedCategory || detectedCategory === 'Local Business') {
+            const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+            if (titleMatch) {
+              const title = titleMatch[1].toLowerCase();
+              if (title.includes('dentist') || title.includes('dental')) detectedCategory = 'Dental Clinic';
+              else if (title.includes('restaurant') || title.includes('pizza') || title.includes('cafe')) detectedCategory = 'Restaurant';
+              else if (title.includes('salon') || title.includes('hair') || title.includes('spa')) detectedCategory = 'Beauty Salon';
+              else if (title.includes('marketing') || title.includes('seo') || title.includes('agency')) detectedCategory = 'SEO Agency';
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Competitor web scrape failed, using defaults:', err);
+      }
+    }
+
     const competitor = await Competitor.create({
       businessId,
       name,
       websiteUrl,
-      primaryCategory,
-      reviewsCount: Math.floor(Math.random() * 50) + 5,
-      averageRating: Number((Math.random() * 1.5 + 3.5).toFixed(1)),
-      photosCount: Math.floor(Math.random() * 20) + 1,
+      primaryCategory: detectedCategory,
+      reviewsCount,
+      averageRating,
+      photosCount,
       trackedKeywords: ['seo services', 'seo consultant']
     });
 
