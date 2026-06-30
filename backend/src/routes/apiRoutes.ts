@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticateJWT, requireRoles } from '../middleware/auth';
 import {
   registerUser, loginUser, googleLogin, guestAddBusiness, getDashboardMetrics, createBusiness, getBusinesses,
-  connectGoogleAccount, getGoogleProfile, addKeyword, getKeywords, getGridRankings,
+  connectGoogleAccount, getGoogleProfile, getGbpPosts, createGbpPost, getGbpPhotos, uploadGbpPhoto, addKeyword, getKeywords, getGridRankings,
   getReviews, replyToReview, generateAiReviewResponse, addCompetitor, getCompetitors,
   getCitations, updateCitationStatus, runSeoAudit, runWebsiteAudit, getTasks,
   createTask, updateTaskStatus, generateAiContent, createSchema, getSchemas,
@@ -29,6 +29,10 @@ router.get('/businesses', authenticateJWT, getBusinesses);
 // Google Profiles
 router.post('/google-profiles/connect', authenticateJWT, connectGoogleAccount);
 router.get('/google-profiles', authenticateJWT, getGoogleProfile);
+router.get('/google-profiles/posts', authenticateJWT, getGbpPosts);
+router.post('/google-profiles/posts', authenticateJWT, createGbpPost);
+router.get('/google-profiles/photos', authenticateJWT, getGbpPhotos);
+router.post('/google-profiles/photos', authenticateJWT, uploadGbpPhoto);
 
 // Keywords & Rankings
 router.post('/keywords', authenticateJWT, addKeyword);

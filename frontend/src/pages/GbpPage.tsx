@@ -21,36 +21,38 @@ export const GbpPage: React.FC = () => {
   const [postSuccess, setPostSuccess] = useState(false);
 
   // Photo states
-  const [photos, setPhotos] = useState<string[]>([
-    'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=150&auto=format&fit=crop&q=60',
-    'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=150&auto=format&fit=crop&q=60',
-    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&auto=format&fit=crop&q=60'
-  ]);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [photoCategory, setPhotoCategory] = useState<'Interior' | 'Exterior' | 'Team' | 'Logo'>('Interior');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setUploadSuccess(false);
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !profile) return;
 
     setUploadingPhoto(true);
     const url = URL.createObjectURL(file);
     
-    // Simulate real network upload delay
-    setTimeout(() => {
-      setPhotos((prev) => [url, ...prev]);
-      if (profile) {
-        setProfile({
-          ...profile,
-          photosCount: profile.photosCount + 1
-        });
-      }
-      setUploadingPhoto(false);
+    try {
+      const res = await axios.post(`${apiBaseUrl}/google-profiles/photos`, {
+        googleProfileId: profile._id,
+        photoUrl: url
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPhotos(res.data.photos);
+      setProfile({
+        ...profile,
+        photosCount: res.data.photos.length
+      });
       setUploadSuccess(true);
+    } catch (err) {
+      console.error('Failed to upload photo:', err);
+    } finally {
+      setUploadingPhoto(false);
       e.target.value = '';
-    }, 1200);
+    }
   };
 
   const fetchProfileAndPosts = async () => {
@@ -60,16 +62,30 @@ export const GbpPage: React.FC = () => {
       const profileRes = await axios.get(`${apiBaseUrl}/google-profiles?businessId=${activeBusiness._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setProfile(profileRes.data);
+      const profileData = profileRes.data;
+      setProfile(profileData);
 
-      // In real apps, fetch posts from /google-profiles/posts. Here we simulate posts list.
-      setPosts([
-        { _id: 'post_1', summary: 'Check out our new local optimization plan starting this Monday!', actionType: 'LEARN_MORE', status: 'Published', publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
-        { _id: 'post_2', summary: 'Book a free local SEO audit session directly from our GBP listing.', actionType: 'BOOK', status: 'Scheduled', scheduledAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) }
-      ]);
+      if (profileData) {
+        // Fetch posts
+        const postsRes = await axios.get(`${apiBaseUrl}/google-profiles/posts?googleProfileId=${profileData._id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setPosts(postsRes.data);
+
+        // Fetch photos
+        const photosRes = await axios.get(`${apiBaseUrl}/google-profiles/photos?googleProfileId=${profileData._id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setPhotos(photosRes.data);
+      } else {
+        setPosts([]);
+        setPhotos([]);
+      }
     } catch (error) {
       console.log('Google Profile not connected yet.');
       setProfile(null);
+      setPosts([]);
+      setPhotos([]);
     } finally {
       setLoading(false);
     }
@@ -100,6 +116,7 @@ export const GbpPage: React.FC = () => {
 
   const handleSchedulePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!profile) return;
     setPostError(null);
     setPostSuccess(false);
 
@@ -109,21 +126,21 @@ export const GbpPage: React.FC = () => {
     }
 
     try {
-      // Simulate creating GBP post on the backend
-      const newPost = {
-        _id: 'post_' + Math.random().toString(36).substr(2, 9),
+      const res = await axios.post(`${apiBaseUrl}/google-profiles/posts`, {
+        googleProfileId: profile._id,
         summary,
         actionType,
-        ctaUrl: actionType !== 'CALL' ? ctaUrl : undefined,
-        status: 'Scheduled',
-        scheduledAt: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000)
-      };
+        ctaUrl: actionType !== 'CALL' ? ctaUrl : undefined
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-      setPosts([newPost, ...posts]);
+      setPosts([res.data, ...posts]);
       setSummary('');
       setCtaUrl('');
       setPostSuccess(true);
     } catch (error: any) {
+      console.error(error);
       setPostError('Failed to schedule GBP Post.');
     }
   };

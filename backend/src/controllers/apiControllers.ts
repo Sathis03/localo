@@ -332,33 +332,94 @@ export const connectGoogleAccount = async (req: AuthenticatedRequest, res: Respo
   try {
     const { authCode, businessId } = req.body;
     
-    // In a real application, authCode is exchanged with Google OAuth servers.
-    // We mock the successful Google account connection and GBP import.
     let gProfile = await GoogleProfile.findOne({ businessId, isDeleted: false });
     if (!gProfile) {
       const business = await Business.findById(businessId);
       const businessName = business?.name || 'Local Business';
-      const category = businessName.toLowerCase().includes('marketing') || businessName.toLowerCase().includes('seo')
-        ? 'SEO Agency'
-        : 'Local Service Business';
+      const nameLower = businessName.toLowerCase();
+      
+      let category = 'Local Service Business';
+      let secondaryCats: string[] = ['Professional Services'];
+      let description = `Official Google Business Profile for ${businessName}, serving local customers with high-quality services.`;
+      let services: string[] = ['Customer Support', 'General Services', 'Consultation'];
+      let products: any[] = [
+        { name: 'Standard consultation', price: 'Free', description: 'Initial service evaluation' }
+      ];
+      let initialPhotos: string[] = [
+        'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=150&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=150&auto=format&fit=crop&q=60',
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&auto=format&fit=crop&q=60'
+      ];
+
+      // Detect specific categories
+      if (nameLower.includes('dent') || nameLower.includes('tooth') || nameLower.includes('ortho')) {
+        category = 'Dental Clinic';
+        secondaryCats = ['Dentist', 'Cosmetic Dentist', 'Emergency Dental Service'];
+        description = `Welcome to ${businessName}. We provide state-of-the-art general, cosmetic, and implant dentistry services in a warm and comfortable environment.`;
+        services = ['Teeth Cleaning', 'Root Canal Therapy', 'Dental Implants', 'Teeth Whitening', 'Cosmetic Dentistry'];
+        products = [
+          { name: 'Teeth Whitening Kit', price: '$120', description: 'Take-home professional whitening kit with custom trays.' },
+          { name: 'Electric Toothbrush', price: '$85', description: 'Rechargeable electric toothbrush recommended by dentists.' }
+        ];
+        initialPhotos = [
+          'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=150&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=150&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=150&auto=format&fit=crop&q=60'
+        ];
+      } else if (nameLower.includes('rest') || nameLower.includes('pizz') || nameLower.includes('cafe') || nameLower.includes('food') || nameLower.includes('kitchen') || nameLower.includes('burger')) {
+        category = 'Restaurant';
+        secondaryCats = ['Caterer', 'Delivery Service', 'Family Restaurant', 'Cafe'];
+        description = `Enjoy delicious, freshly prepared dishes at ${businessName}. We pride ourselves on using local ingredients, friendly service, and a great atmosphere.`;
+        services = ['Dine-in', 'Curbside Pickup', 'Catering Services', 'No-contact Delivery', 'Group Bookings'];
+        products = [
+          { name: 'Signature Gourmet Pizza', price: '$18', description: 'Hand-tossed crust with signature sauce and fresh toppings.' },
+          { name: 'Handcrafted House Burger', price: '$14', description: 'Angus beef patty with fresh lettuce, tomato, and house special sauce.' }
+        ];
+        initialPhotos = [
+          'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=150&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=150&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=150&auto=format&fit=crop&q=60'
+        ];
+      } else if (nameLower.includes('salon') || nameLower.includes('hair') || nameLower.includes('beauty') || nameLower.includes('spa') || nameLower.includes('nail')) {
+        category = 'Beauty Salon';
+        secondaryCats = ['Hair Salon', 'Nail Salon', 'Day Spa', 'Hairdresser'];
+        description = `Transform your look and relax at ${businessName}. Our professional stylists offer haircuts, color treatments, nails, and rejuvenating spa facials.`;
+        services = ['Haircut and Styling', 'Manicure & Pedicure', 'Facial Treatment', 'Massage Therapy', 'Hair Coloring'];
+        products = [
+          { name: 'Organic Hydrating Shampoo', price: '$24', description: 'Nourishing shampoo made with natural argan oil and aloe vera.' },
+          { name: 'Nail Nourishing Cream', price: '$15', description: 'Restorative formula for strong nails and soft cuticles.' }
+        ];
+        initialPhotos = [
+          'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=150&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=150&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-1607779097040-26e80aa78e66?w=150&auto=format&fit=crop&q=60'
+        ];
+      } else if (nameLower.includes('market') || nameLower.includes('seo') || nameLower.includes('agency') || nameLower.includes('consult')) {
+        category = 'SEO Agency';
+        secondaryCats = ['Marketing Consultant', 'Professional Services', 'Advertising Agency'];
+        description = `Boost your local search visibility with ${businessName}. We customize local SEO campaigns, audits, reviews management, and keyword tracking.`;
+        services = ['Local SEO Audits', 'Google Business Profile Setup', 'Keyword Grid Tracking', 'Review Responding AI', 'Competitor Insights'];
+        products = [
+          { name: 'Full Local SEO Audit', price: '$199', description: 'Complete search grid analysis and website optimization audit report.' },
+          { name: 'Google Profile Optimization Pack', price: 'Free', description: 'Complete GMB synchronization and checklist setup.' }
+        ];
+      }
 
       gProfile = await GoogleProfile.create({
         businessId,
         accountId: 'acc_' + Math.random().toString(36).substr(2, 9),
         locationId: 'loc_' + Math.random().toString(36).substr(2, 9),
-        placeId: 'ChIJP3Sa12K2uS4R182a51a_',
+        placeId: 'ChIJ' + businessId.toString().substring(12) + '_' + Math.random().toString(36).substr(2, 4),
         businessName,
         primaryCategory: category,
-        secondaryCategories: ['Marketing Consultant', 'Professional Services'],
-        description: `Official Google Business Profile for ${businessName}, serving local customers with high-quality services.`,
-        services: ['Customer Support', 'General Services', 'Consultation'],
-        products: [
-          { name: 'Free Local SEO Audit', price: 'Free', description: 'Basic search optimization evaluation' },
-          { name: 'Google Profile Optimization', price: 'Free', description: 'Complete GBP optimization checklist setup' }
-        ],
-        photosCount: 8,
-        reviewsCount: 3,
-        averageRating: 4.7,
+        secondaryCategories: secondaryCats,
+        description,
+        services,
+        products,
+        photosCount: initialPhotos.length,
+        photos: initialPhotos,
+        reviewsCount: Math.floor(Math.random() * 85) + 12,
+        averageRating: Number((Math.random() * 0.8 + 4.1).toFixed(1)),
         openingHours: {
           monday: '9am - 6pm',
           tuesday: '9am - 6pm',
@@ -375,7 +436,7 @@ export const connectGoogleAccount = async (req: AuthenticatedRequest, res: Respo
       await Review.create([
         {
           googleProfileId: gProfile._id,
-          reviewId: 'rev_1',
+          reviewId: 'rev_' + Math.random().toString(36).substr(2, 9),
           reviewerName: 'John Doe',
           rating: 5,
           comment: `Outstanding service from ${businessName}! They exceeded our expectations. Highly recommended!`,
@@ -385,7 +446,7 @@ export const connectGoogleAccount = async (req: AuthenticatedRequest, res: Respo
         },
         {
           googleProfileId: gProfile._id,
-          reviewId: 'rev_2',
+          reviewId: 'rev_' + Math.random().toString(36).substr(2, 9),
           reviewerName: 'Sarah Smith',
           rating: 4,
           comment: `Great experience working with ${businessName}. Professional team and solid results.`,
@@ -395,13 +456,33 @@ export const connectGoogleAccount = async (req: AuthenticatedRequest, res: Respo
         },
         {
           googleProfileId: gProfile._id,
-          reviewId: 'rev_3',
+          reviewId: 'rev_' + Math.random().toString(36).substr(2, 9),
           reviewerName: 'Mike Jones',
           rating: 3,
           comment: `Good overall, but communication could be slightly faster. Hopefully it improves.`,
           sentiment: 'Neutral',
           isReplied: false,
           publishDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
+        }
+      ]);
+
+      // Seed initial posts for this profile
+      await Post.create([
+        {
+          googleProfileId: gProfile._id,
+          summary: `Welcome to ${businessName}! Check out our local optimization services and contact details.`,
+          actionType: 'LEARN_MORE',
+          ctaUrl: business?.websiteUrl || 'https://localrankpro.com',
+          status: 'Published',
+          publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+        },
+        {
+          googleProfileId: gProfile._id,
+          summary: `Book an appointment with ${businessName} directly from our Google Profile!`,
+          actionType: 'BOOK',
+          ctaUrl: business?.websiteUrl || 'https://localrankpro.com',
+          status: 'Scheduled',
+          scheduledAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
         }
       ]);
     }
@@ -418,6 +499,77 @@ export const getGoogleProfile = async (req: AuthenticatedRequest, res: Response)
     const profile = await GoogleProfile.findOne({ businessId, isDeleted: false });
     if (!profile) return res.status(404).json({ error: 'GBP Profile not connected' });
     return res.status(200).json(profile);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const getGbpPosts = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { googleProfileId } = req.query;
+    if (!googleProfileId) {
+      return res.status(400).json({ error: 'googleProfileId is required' });
+    }
+    const posts = await Post.find({ googleProfileId, isDeleted: false }).sort({ createdAt: -1 });
+    return res.status(200).json(posts);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const createGbpPost = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { googleProfileId, summary, actionType, ctaUrl } = req.body;
+    if (!googleProfileId || !summary) {
+      return res.status(400).json({ error: 'googleProfileId and summary are required' });
+    }
+    const newPost = await Post.create({
+      googleProfileId,
+      summary,
+      actionType,
+      ctaUrl: actionType !== 'CALL' ? ctaUrl : undefined,
+      status: 'Scheduled',
+      scheduledAt: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000)
+    });
+    return res.status(201).json(newPost);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const getGbpPhotos = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { googleProfileId } = req.query;
+    if (!googleProfileId) {
+      return res.status(400).json({ error: 'googleProfileId is required' });
+    }
+    const profile = await GoogleProfile.findById(googleProfileId);
+    if (!profile) {
+      return res.status(404).json({ error: 'Google Profile not found' });
+    }
+    return res.status(200).json(profile.photos || []);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const uploadGbpPhoto = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { googleProfileId, photoUrl } = req.body;
+    if (!googleProfileId || !photoUrl) {
+      return res.status(400).json({ error: 'googleProfileId and photoUrl are required' });
+    }
+    const profile = await GoogleProfile.findById(googleProfileId);
+    if (!profile) {
+      return res.status(404).json({ error: 'Google Profile not found' });
+    }
+    if (!profile.photos) {
+      profile.photos = [];
+    }
+    profile.photos.push(photoUrl);
+    profile.photosCount = profile.photos.length;
+    await profile.save();
+    return res.status(200).json({ success: true, photos: profile.photos });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

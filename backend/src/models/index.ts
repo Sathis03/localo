@@ -132,6 +132,7 @@ export interface IGoogleProfile extends Document {
   services: string[];
   products: Array<{ name: string; price?: string; description?: string }>;
   photosCount: number;
+  photos?: string[];
   reviewsCount: number;
   averageRating: number;
   openingHours?: Record<string, any>;
@@ -158,6 +159,7 @@ const GoogleProfileSchema = new Schema<IGoogleProfile>({
     description: String
   }],
   photosCount: { type: Number, default: 0 },
+  photos: { type: [String], default: [] },
   reviewsCount: { type: Number, default: 0 },
   averageRating: { type: Number, default: 0 },
   openingHours: Schema.Types.Mixed,
